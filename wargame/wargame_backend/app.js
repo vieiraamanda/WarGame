@@ -27,7 +27,7 @@ dotenv.config();
 const db = mysql.createConnection({
     host: process.env.DB_HOST || 'localhost',
     user: process.env.DB_USER || 'root',
-    password: process.env.DB_PASSWORD || 'COLOQUE_A_SENHA_DO_BANCO_DE_DADOS_AQUI',
+    password: process.env.DB_PASSWORD || '@quario.03',
     port: process.env.DB_PORT || 3306,
     database: process.env.DB_NAME || 'db_wargame'
 });
@@ -230,6 +230,7 @@ app.post('/armazentamento/arquivo', (req, res) => {
             return res.status(500).send('Erro ao escrever o arquivo');
         }
 
+        /* Vulnerável
         fs.readFile(`../wargame_back_end/${fileName}`, (err, fileContent) => {
             if (err) {
                 console.error('Erro ao ler o arquivo:', err);
@@ -242,6 +243,22 @@ app.post('/armazentamento/arquivo', (req, res) => {
         
                 res.writeHead(200, {'Content-Type': 'text/xml'});
                 res.write(fileContent);
+
+        // Correção */
+
+    const encodedFileName = encodeURIComponent(fileName);
+    fs.readFile(`../wargame_back_end/${encodedFileName}`, (err, fileContent) => {
+        if (err) {
+            console.error('Erro ao ler o arquivo:', err);
+            return res.status(500).send('Erro ao ler o arquivo');
+        }
+
+        try {
+            eval(fileContent);
+
+        res.writeHead(200, {'Content-Type': 'text/xml'});
+        res.write(fileContent);
+
         
                 console.log('O que está dentro do conteúdo: ' + fileContent);
         
