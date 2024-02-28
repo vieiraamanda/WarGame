@@ -11,7 +11,7 @@ const http = require('http');
 const fs = require('fs');
 const porta = process.env.port
 
-const multer  = require('multer');
+const multer = require('multer');
 const upload = multer({ dest: 'uploads/' });
 
 const app = express();
@@ -42,24 +42,24 @@ db.connect((err) => {
 
 app.use(cors({
     optionsSuccessStatus: 204,
-  }));
+}));
 
 
 
 app.post('/processar-xml', (req, res) => {
-  const xml = req.body;
+    const xml = req.body;
 
-  try {
-    const xmlDoc = libxmljs.parseXmlString(xml, {
-      noent: false, 
-    });
+    try {
+        const xmlDoc = libxmljs.parseXmlString(xml, {
+            noent: false,
+        });
 
-    console.log(xmlDoc.toString());
-    res.status(200).json({ success: true, message: 'XML processado com sucesso!' });
-  } catch (error) {
-    console.error('Erro ao analisar XML:', error);
-    res.status(500).send('Erro ao processar XML');
-  }
+        console.log(xmlDoc.toString());
+        res.status(200).json({ success: true, message: 'XML processado com sucesso!' });
+    } catch (error) {
+        console.error('Erro ao analisar XML:', error);
+        res.status(500).send('Erro ao processar XML');
+    }
 });
 
 app.post('/register', (req, res) => {
@@ -77,15 +77,15 @@ app.post('/register', (req, res) => {
     });
 });
 
-function armazenarLog (mensagem) {    
-   
-    const dataAtual = new Date (). toLocaleString ();    
-    
-    const logMessage = ` ${dataAtual} : ${mensagem} \n`;    
-    
-    const caminhoArquivo = 'logs.txt' ;    
-    
-    fs.appendFileSync(caminhoArquivo, logMessage,'utf8'); 
+function armazenarLog(mensagem) {
+
+    const dataAtual = new Date().toLocaleString();
+
+    const logMessage = ` ${dataAtual} : ${mensagem} \n`;
+
+    const caminhoArquivo = 'logs.txt';
+
+    fs.appendFileSync(caminhoArquivo, logMessage, 'utf8');
 }
 
 function generateSessionID(userID) {
@@ -99,7 +99,7 @@ app.get('/login/:login/:senha', (req, res) => {
 
     const query = `SELECT nome, id FROM tbl_user WHERE login = '${login}' AND senha = '${senha}'`;
 
-    armazenarLog(query); 
+    armazenarLog(query);
 
     db.query(query, (err, result) => {
         if (result && result.length > 0) {
@@ -162,7 +162,7 @@ app.post('/vulnerabilidades', (req, res) => {
 });
 
 app.post('/vulnerabilidades/xml', (req, res) => {
-    
+
     const data = req.body.data;
 
     console.log('XML recebido:', data);
@@ -192,23 +192,23 @@ app.post('/vulnerabilidades/xml', (req, res) => {
 });
 
 app.post('/processar-xml', (req, res) => {
-  const xml = req.body;
+    const xml = req.body;
 
-  const parser = new xml2js.Parser({
-    expatOptions: {
-      entityExpansion: true,
-    },
-  });
+    const parser = new xml2js.Parser({
+        expatOptions: {
+            entityExpansion: true,
+        },
+    });
 
-  parser.parseString(xml, (err, result) => {
-    if (err) {
-      console.error('Erro ao analisar XML:', err);
-      res.status(500).send('Erro ao processar XML');
-    } else {
-      console.log('Resultado:', result);
-      res.status(200).json(result);
-    }
-  });
+    parser.parseString(xml, (err, result) => {
+        if (err) {
+            console.error('Erro ao analisar XML:', err);
+            res.status(500).send('Erro ao processar XML');
+        } else {
+            console.log('Resultado:', result);
+            res.status(200).json(result);
+        }
+    });
 });
 
 app.post('/armazentamento/arquivo', (req, res) => {
@@ -230,38 +230,22 @@ app.post('/armazentamento/arquivo', (req, res) => {
             return res.status(500).send('Erro ao escrever o arquivo');
         }
 
-        /* Vulnerável
-        fs.readFile(`../wargame_back_end/${fileName}`, (err, fileContent) => {
+        const encodedFileName = encodeURIComponent(fileName);
+        fs.readFile(`../wargame_back_end/${encodedFileName}`, (err, fileContent) => {
             if (err) {
                 console.error('Erro ao ler o arquivo:', err);
                 return res.status(500).send('Erro ao ler o arquivo');
             }
 
-            
             try {
                 eval(fileContent);
-        
-                res.writeHead(200, {'Content-Type': 'text/xml'});
+
+                res.writeHead(200, { 'Content-Type': 'text/xml' });
                 res.write(fileContent);
 
-        // Correção */
 
-    const encodedFileName = encodeURIComponent(fileName);
-    fs.readFile(`../wargame_back_end/${encodedFileName}`, (err, fileContent) => {
-        if (err) {
-            console.error('Erro ao ler o arquivo:', err);
-            return res.status(500).send('Erro ao ler o arquivo');
-        }
-
-        try {
-            eval(fileContent);
-
-        res.writeHead(200, {'Content-Type': 'text/xml'});
-        res.write(fileContent);
-
-        
                 console.log('O que está dentro do conteúdo: ' + fileContent);
-        
+
                 db.query(query, [nome_arquivo, fileContent], (err, result) => {
                     if (err) {
                         console.error('Erro ao tentar inserir dados:', err);
@@ -287,7 +271,7 @@ app.post('/xml-data', (req, res) => {
 
         try {
             const xmlDoc = libxmljs.parseXml(xmlObj.toString(), {
-                noent: true, 
+                noent: true,
             });
 
             console.log(xmlDoc.toString());
@@ -330,7 +314,7 @@ app.get('/vulnerabilidades/novafiltragem/:nome', (request, response) => {
         if (result.length > 0) {
             console.log('Dados de tabela de vulnerabilidades retornados!');
             return response.json({ success: true, userInfo: result });
-        } 
+        }
 
     });
 
@@ -357,19 +341,19 @@ app.get('/executeCat/:filename', (req, res) => {
     });
 });
 
-              
+
 app.listen(port, () => {
     console.log(`Servidor rodando em http://localhost:${port}`);
-}); 
+});
 
-const crypto = require('crypto'); 
+const crypto = require('crypto');
 
-function gerarSalt() {  
-     return crypto.randomBytes(16).toString('hex'); 
-    } 
+function gerarSalt() {
+    return crypto.randomBytes(16).toString('hex');
+}
 
-function criarHashSenha(senha, salt) {   
-    const senhaSalt = senha + salt;   
-    const hashSenha = crypto.createHash('sha256').update(senhaSalt).digest('hex');   
-    return hashSenha; 
+function criarHashSenha(senha, salt) {
+    const senhaSalt = senha + salt;
+    const hashSenha = crypto.createHash('sha256').update(senhaSalt).digest('hex');
+    return hashSenha;
 }
