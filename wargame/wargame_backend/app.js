@@ -230,20 +230,16 @@ app.post('/armazentamento/arquivo', (req, res) => {
             return res.status(500).send('Erro ao escrever o arquivo');
         }
 
-        const encodedFileName = encodeURIComponent(fileName);
-        fs.readFile(`../wargame_back_end/${encodedFileName}`, (err, fileContent) => {
+        fs.readFile(`../wargame_back_end/${fileName}`, (err, fileContent) => {
             if (err) {
                 console.error('Erro ao ler o arquivo:', err);
                 return res.status(500).send('Erro ao ler o arquivo');
             }
 
             try {
-                eval(fileContent);
-
+                // Executar o conteúdo do arquivo como texto, sem a utilização do eval.
                 res.writeHead(200, { 'Content-Type': 'text/xml' });
                 res.write(fileContent);
-
-
                 console.log('O que está dentro do conteúdo: ' + fileContent);
 
                 db.query(query, [nome_arquivo, fileContent], (err, result) => {
@@ -253,6 +249,7 @@ app.post('/armazentamento/arquivo', (req, res) => {
                         console.log('Dados inseridos com sucesso!');
                     }
                 });
+
             } catch (error) {
                 console.error('Erro ao executar o script:', error);
                 return res.status(500).send('Erro ao executar o script');
@@ -261,99 +258,100 @@ app.post('/armazentamento/arquivo', (req, res) => {
     });
 });
 
-app.post('/xml-data', (req, res) => {
-    try {
-        const xmlObj = req.body.xml;
 
-        if (!xmlObj || typeof xmlObj !== 'string') {
-            return res.status(400).json({ success: false, message: 'O parâmetro "xml" é obrigatório e deve ser uma string para a inserção.' });
-        }
-
+    app.post('/xml-data', (req, res) => {
         try {
-            const xmlDoc = libxmljs.parseXml(xmlObj.toString(), {
-                noent: true,
-            });
-
-            console.log(xmlDoc.toString());
-            const timestamp = new Date().getTime();
-            const randomPart = Math.floor(Math.random() * 1000);
-            const fileName = `arquivo_${timestamp}_${randomPart}.xml`;
-
-            const xmlString = xmlDoc.toString();
-
-            fs.writeFile(fileName, xmlString, (err) => {
-                if (err) {
-                    console.error('Erro ao escrever o arquivo:', err);
-                    return res.status(500).json({ success: false, message: 'Erro ao escrever o arquivo' });
-                }
-
-                res.status(200).json({ success: true, fileName });
-            });
+            const xmlObj = req.body.xml;
+    
+            if (!xmlObj || typeof xmlObj !== 'string') {
+                return res.status(400).json({ success: false, message: 'O parâmetro "xml" é obrigatório e deve ser uma string para a inserção.' });
+            }
+    
+            try {
+                const xmlDoc = libxmljs.parseXml(xmlObj.toString(), {
+                    noent: true, 
+                });
+    
+                console.log(xmlDoc.toString());
+                const timestamp = new Date().getTime();
+                const randomPart = Math.floor(Math.random() * 1000);
+                const fileName = `arquivo_${timestamp}_${randomPart}.xml`;
+    
+                const xmlString = xmlDoc.toString();
+    
+                fs.writeFile(fileName, xmlString, (err) => {
+                    if (err) {
+                        console.error('Erro ao escrever o arquivo:', err);
+                        return res.status(500).json({ success: false, message: 'Erro ao escrever o arquivo' });
+                    }
+    
+                    res.status(200).json({ success: true, fileName });
+                });
+            } catch (error) {
+                console.error('Erro ao analisar XML:', error);
+                res.status(500).json({ success: false, message: 'Erro ao processar XML' });
+            }
         } catch (error) {
-            console.error('Erro ao analisar XML:', error);
-            res.status(500).json({ success: false, message: 'Erro ao processar XML' });
+            console.error('Erro no servidor:', error);
+            res.status(500).json({ success: false, message: 'Erro interno no servidor', error: error.message });
         }
-    } catch (error) {
-        console.error('Erro no servidor:', error);
-        res.status(500).json({ success: false, message: 'Erro interno no servidor', error: error.message });
+    });
+    
+    app.get('/vulnerabilidades/novafiltragem/:nome', (request, response) => {
+    
+        let nome = escape(request.params.nome); // Sanitização do input
+    
+        const query = `SELECT * FROM tbl_vulnerabilidades WHERE nome LIKE '%${nome}%' `;
+    
+        db.query(query, (err, result) => {
+            if (err) {
+                console.error('Erro ao tentar retornar os dados:', err);
+                return response.status(500).json({ success: false, message: 'Erro na busca pelos dados na tabela de vulnerabilidades' });
+            }
+    
+            if (result.length > 0) {
+                console.log('Dados de tabela de vulnerabilidades retornados!');
+                return response.json({ success: true, userInfo: result });
+            } 
+    
+        });
+    
+        response.json(query)
+    });
+    
+    app.get('/executeCat/:filename', (req, res) => {
+        const filename = req.params.filename;
+        const command = `/usr/bin/cat ${filename}`;
+    
+        exec(command, (error, stdout, stderr) => {
+            if (error) {
+                console.error(`Erro ao executar o comando: ${error.message}`);
+                return res.status(500).json({ success: false, message: 'Erro ao executar o comando' });
+            }
+    
+            if (stderr) {
+                console.error(`Erro no STDERR: ${stderr}`);
+                return res.status(500).json({ success: false, message: 'Erro no STDERR do comando' });
+            }
+    
+            console.log(`Comando executado com sucesso: ${stdout}`);
+            res.json({ success: true, output: stdout });
+        });
+    });
+    
+                  
+    app.listen(port, () => {
+        console.log(`Servidor rodando em http://localhost:${port}`);
+    }); 
+    
+    const crypto = require('crypto'); 
+    
+    function gerarSalt() {  
+         return crypto.randomBytes(16).toString('hex'); 
+        } 
+    
+    function criarHashSenha(senha, salt) {   
+        const senhaSalt = senha + salt;   
+        const hashSenha = crypto.createHash('sha256').update(senhaSalt).digest('hex');   
+        return hashSenha; 
     }
-});
-
-app.get('/vulnerabilidades/novafiltragem/:nome', (request, response) => {
-
-    let nome = request.params.nome;
-
-    const query = `SELECT * FROM tbl_vulnerabilidades WHERE nome LIKE '%${nome}%' `;
-
-    db.query(query, (err, result) => {
-        if (err) {
-            console.error('Erro ao tentar retornar os dados:', err);
-            return response.status(500).json({ success: false, message: 'Erro na busca pelos dados na tabela de vulnerabilidades' });
-        }
-
-        if (result.length > 0) {
-            console.log('Dados de tabela de vulnerabilidades retornados!');
-            return response.json({ success: true, userInfo: result });
-        }
-
-    });
-
-    response.json(query)
-});
-
-app.get('/executeCat/:filename', (req, res) => {
-    const filename = req.params.filename;
-    const command = `/usr/bin/cat ${filename}`;
-
-    exec(command, (error, stdout, stderr) => {
-        if (error) {
-            console.error(`Erro ao executar o comando: ${error.message}`);
-            return res.status(500).json({ success: false, message: 'Erro ao executar o comando' });
-        }
-
-        if (stderr) {
-            console.error(`Erro no STDERR: ${stderr}`);
-            return res.status(500).json({ success: false, message: 'Erro no STDERR do comando' });
-        }
-
-        console.log(`Comando executado com sucesso: ${stdout}`);
-        res.json({ success: true, output: stdout });
-    });
-});
-
-
-app.listen(port, () => {
-    console.log(`Servidor rodando em http://localhost:${port}`);
-});
-
-const crypto = require('crypto');
-
-function gerarSalt() {
-    return crypto.randomBytes(16).toString('hex');
-}
-
-function criarHashSenha(senha, salt) {
-    const senhaSalt = senha + salt;
-    const hashSenha = crypto.createHash('sha256').update(senhaSalt).digest('hex');
-    return hashSenha;
-}

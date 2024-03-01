@@ -1,3 +1,5 @@
+import DOMPurify from 'dompurify';
+
 var input;
 
 function buscarVulnerabilidades(nome) {
@@ -43,7 +45,8 @@ function buscarVulnerabilidades(nome) {
                 mensagem.innerText = "Nenhum dado encontrado na tabela de vulnerabilidades.";
                 cards.appendChild(mensagem);
 
-                cards.innerHTML = `${input.value}`;
+                // Sanitizar o valor do input usando o DOMPurify
+                cards.innerHTML = DOMPurify.sanitize(input.value);
                 
             }
         })
